@@ -11,4 +11,6 @@ scram project CMSSW_12_6_0
 cd CMSSW_12_6_0/src
 cmsenv
 cd -
+# maybe rich is needed
+pip3 install --user rich
 ```

@@ -1,4 +1,4 @@
-# from rucio.client.client import Client
+from rucio.client.client import Client
 import os
 import json
 import yaml
@@ -31,20 +31,20 @@ publish_config = args.dbs_config_file
 if args.mode == "rucio":
     # First step: get the sample information from Rucio
     print("Getting sample information from Rucio")
-    # setup_rucio_account()
-    # client = Client()
-    # transfered_samples = get_account_rules(client, account, dbs_regex)
-    # data = {}
-    # for sample in transfered_samples:
-    #     rucio_data = get_rucio_blocks(client, scope, account, sample["name"])
-    #     data[sample["name"]] = rucio_data
-    #     print(f"Sample: {sample['name']}")
-    #     print(f"Number of blocks: {len(rucio_data)}")
-    #     print(
-    #         f"Number of files: {sum([len(rucio_data[x]['files']) for x in range(len(rucio_data))])}"
-    #     )
-    # # dump data into json file
-    # json.dump(data, open(rucio_db_file, "w"), indent=4)
+    setup_rucio_account()
+    client = Client()
+    transfered_samples = get_account_rules(client, account, dbs_regex)
+    data = {}
+    for sample in transfered_samples:
+        rucio_data = get_rucio_blocks(client, scope, account, sample["name"])
+        data[sample["name"]] = rucio_data
+        print(f"Sample: {sample['name']}")
+        print(f"Number of blocks: {len(rucio_data)}")
+        print(
+            f"Number of files: {sum([len(rucio_data[x]['files']) for x in range(len(rucio_data))])}"
+        )
+    # dump data into json file
+    json.dump(data, open(rucio_db_file, "w"), indent=4)
 else:
     # load data from json file
     rucio_db = json.load(open(rucio_db_file, "r"))
