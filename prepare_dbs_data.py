@@ -9,9 +9,8 @@ import time
 import json
 import pdb
 import numpy as np
-from multiprocessing import Pool, current_process, RLock, Manager
+from multiprocessing import Manager
 from concurrent.futures import as_completed, ProcessPoolExecutor
-from tqdm import tqdm
 import ROOT
 
 
@@ -51,8 +50,6 @@ def readout_file_information(
     files,
     outputfolder,
 ):
-    # worker id
-    # worker_id = current_process()._identity[0]
     outputfile = os.path.join(
         outputfolder, "temp", "file_details_{}.json".format(tasknumber)
     )
@@ -61,13 +58,6 @@ def readout_file_information(
         return
     data = {}
     output_data = []
-    # with tqdm(
-    #     total=len(files),
-    #     position=worker_id,
-    #     desc="Task {}".format(tasknumber),
-    #     dynamic_ncols=True,
-    #     leave=False,
-    # ) as bar:
     for i, rootfile_info in enumerate(files):
         fileinfo = get_file_information(
             "root://xrootd-cms.infn.it//" + rootfile_info["name"]
@@ -322,25 +312,6 @@ class DBS3Uploader(object):
         if nthreads > len(arguments):
             nthreads = len(arguments)
         print("Running {} tasks with {} threads".format(len(arguments), nthreads))
-        # executor = ProcessPoolExecutor()
-        # jobs = [executor.submit(readout_file_information, *param) for param in arguments]
-        # results = []
-        # for job in jobs:
-        # #     results.append(job.result())
-        # pool = Pool(nthreads, initargs=(RLock(),), initializer=tqdm.set_lock)
-        # # pdb.set_trace()
-        # for result in tqdm(
-        #     pool.imap_unordered(job_wrapper, arguments),
-        #     total=len(arguments),
-        #     desc="Total progess",
-        #     position=nthreads + 1,
-        #     dynamic_ncols=True,
-        #     leave=True,
-        # ):
-        #     print(result)
-        #     # pass
-        # pool.close()
-        # pool.join()
         with rich_progress.Progress(
             "[progress.description]{task.description}",
             rich_progress.BarColumn(),
