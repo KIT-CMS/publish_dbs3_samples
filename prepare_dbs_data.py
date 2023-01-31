@@ -16,9 +16,7 @@ import ROOT
 
 
 def getlumi(file):
-    output = subprocess.check_output(
-        "edmLumisInFiles.py {}".format(file), shell=True
-    )
+    output = subprocess.check_output("edmLumisInFiles.py {}".format(file), shell=True)
     lumidict = json.loads(output)
     outputdata = []
     for run in lumidict:
@@ -28,6 +26,7 @@ def getlumi(file):
             for lumi in range(lumilow, lumihigh + 1):
                 outputdata.append({"lumi_section_num": lumi, "run_num": int(run)})
     return outputdata
+
 
 def get_file_information(filepath):
     # print("Reading file: %s" % filepath)
@@ -40,53 +39,54 @@ def get_file_information(filepath):
     data["lumis"] = getlumi(filepath)
     return data
 
+
 def job_wrapper(args):
     return readout_file_information(*args)
 
 
 def readout_file_information(
-        progress,
-        tasknumber,
-        block,
-        files,
-        outputfolder,
-    ):
-        # worker id
-        # worker_id = current_process()._identity[0]
-        outputfile = os.path.join(
-            outputfolder, "temp", "file_details_{}.json".format(tasknumber)
+    progress,
+    tasknumber,
+    block,
+    files,
+    outputfolder,
+):
+    # worker id
+    # worker_id = current_process()._identity[0]
+    outputfile = os.path.join(
+        outputfolder, "temp", "file_details_{}.json".format(tasknumber)
+    )
+    if os.path.exists(outputfile):
+        print("File {} already exists".format(outputfile))
+        return
+    data = {}
+    output_data = []
+    # with tqdm(
+    #     total=len(files),
+    #     position=worker_id,
+    #     desc="Task {}".format(tasknumber),
+    #     dynamic_ncols=True,
+    #     leave=False,
+    # ) as bar:
+    for i, rootfile_info in enumerate(files):
+        fileinfo = get_file_information(
+            "root://xrootd-cms.infn.it//" + rootfile_info["name"]
         )
-        if os.path.exists(outputfile):
-            print("File {} already exists".format(outputfile))
-            return
-        data = {}
-        output_data = []
-        # with tqdm(
-        #     total=len(files),
-        #     position=worker_id,
-        #     desc="Task {}".format(tasknumber),
-        #     dynamic_ncols=True,
-        #     leave=False,
-        # ) as bar:
-        for i, rootfile_info in enumerate(files):
-            fileinfo = get_file_information(
-                "root://xrootd-cms.infn.it//" + rootfile_info["name"]
-            )
-            aFile = {
-                "name": rootfile_info["name"],
-                "event_count": fileinfo["nentries"],
-                "file_size": rootfile_info["bytes"],
-                "check_sum": "NULL",
-                "guid": rootfile_info["guid"],
-                "lumis": fileinfo["lumis"],
-                "adler32": rootfile_info["adler32"],
-            }
-            output_data.append(aFile)
-                # bar.update(1)
-            progress[tasknumber] = {"progress": i, "total": len(files)}
-        #         # bar.update(1)
-        data[tasknumber] = output_data
-        json.dump(data, open(outputfile, "w"))
+        aFile = {
+            "name": rootfile_info["name"],
+            "event_count": fileinfo["nentries"],
+            "file_size": rootfile_info["bytes"],
+            "check_sum": "NULL",
+            "guid": rootfile_info["guid"],
+            "lumis": fileinfo["lumis"],
+            "adler32": rootfile_info["adler32"],
+        }
+        output_data.append(aFile)
+        # bar.update(1)
+        progress[tasknumber] = {"progress": i, "total": len(files)}
+    #         # bar.update(1)
+    data[tasknumber] = output_data
+    json.dump(data, open(outputfile, "w"))
 
 
 def parse_arguments():
@@ -130,9 +130,7 @@ def parse_arguments():
 
 
 class DBS3Uploader(object):
-    def __init__(
-        self, era, dbs_nick, publish_config, rucio_config, threads
-    ):
+    def __init__(self, era, dbs_nick, publish_config, rucio_config, threads):
         self.era = era
         self.processed_ds = dbs_nick.split("/")[2]
         self.primary_ds = dbs_nick.split("/")[1]
@@ -159,7 +157,9 @@ class DBS3Uploader(object):
         )
         self.origin_site_name = self.entry["origin_site_name"]
         # now match the entry with the information from the rucio information
-        self.rucio_entry = self.get_entry_from_rucio(self.rucio_config, self.entry["dbs_name"])
+        self.rucio_entry = self.get_entry_from_rucio(
+            self.rucio_config, self.entry["dbs_name"]
+        )
 
         # create the dataset_info.json file if not existent
         self.dataset_info_file = os.path.join(
@@ -217,7 +217,6 @@ class DBS3Uploader(object):
                 self.origin_site_name,
                 dry=False,
             )
-
 
     def create_new_block(self, ds_info, origin_site_name, blockid):
 
@@ -305,7 +304,6 @@ class DBS3Uploader(object):
             dataset_info["parent_dataset"] = "None"
         json.dump(dataset_info, open(outputfile, "w"))
 
-
     def generate_file_json(self, file_info_file, rucio_entry, outputfolder, nthreads):
         blocks = [block["blockname"] for block in rucio_entry]
         ntasks = len(blocks)
@@ -359,17 +357,33 @@ class DBS3Uploader(object):
                 overall_progress_task = progress.add_task("[green]All tasks progress:")
 
                 with ProcessPoolExecutor(max_workers=nthreads) as executor:
-                    for block,files,outputfolder,tasknumber in arguments:  # iterate over the jobs we need to run
+                    for (
+                        block,
+                        files,
+                        outputfolder,
+                        tasknumber,
+                    ) in arguments:  # iterate over the jobs we need to run
                         # set visible false so we don't have a lot of bars all at once:
                         task_id = progress.add_task(f"task {tasknumber}", visible=False)
-                        futures.append(executor.submit(readout_file_information, _progress, tasknumber, block, files, outputfolder ))
+                        futures.append(
+                            executor.submit(
+                                readout_file_information,
+                                _progress,
+                                tasknumber,
+                                block,
+                                files,
+                                outputfolder,
+                            )
+                        )
 
                     # monitor the progress:
-                    while (n_finished := sum([future.done() for future in futures])) < len(
-                        futures
-                    ):
+                    while (
+                        n_finished := sum([future.done() for future in futures])
+                    ) < len(futures):
                         progress.update(
-                            overall_progress_task, completed=n_finished, total=len(futures)
+                            overall_progress_task,
+                            completed=n_finished,
+                            total=len(futures),
                         )
                         for task_id, update_data in _progress.items():
                             latest = update_data["progress"]

@@ -62,4 +62,3 @@ else:
             dbs_uploader.prepare()
         elif args.mode == "publish":
             dbs_uploader.publish()
-
