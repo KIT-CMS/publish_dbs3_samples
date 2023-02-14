@@ -127,7 +127,7 @@ class DBS3Uploader(object):
         self.publish_config = publish_config
         self.rucio_config = rucio_config
         self.threads = threads
-        self.dbs_url = "https://cmsweb.cern.ch/dbs/prod/global/DBSWriter/"
+        self.dbs_url = "https://cmsweb.cern.ch/dbs/prod/phys03/DBSWriter/"
         self.dbs_api = DbsApi(url=self.dbs_url)
         # setup the basics
         # first create the folders
